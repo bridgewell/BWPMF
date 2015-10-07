@@ -1,0 +1,5 @@
+CXX_STD = CXX11
+
+PKG_LIBS = -lboost_serialization -lboost_iostreams -fopenmp
+
+PKG_CXXFLAGS = -fopenmp #-DNOISY_DEBUG

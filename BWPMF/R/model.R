@@ -1,0 +1,1 @@
+# setMethod("show", Prior, function(object) object$show())

@@ -1,0 +1,7 @@
+useDynLib(BWPMF)
+exportPattern("^[[:alpha:]]+")
+importFrom(methods,new)
+importFrom(Rcpp,loadModule)
+importFrom(Rcpp,loadRcppModules)
+importFrom(Rcpp,cpp_object_initializer)
+export(cpp_object_initializer)
