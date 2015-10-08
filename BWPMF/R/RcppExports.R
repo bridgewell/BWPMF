@@ -93,6 +93,10 @@ train_once <- function(Rmodel, Rtraining_history, Rtesting_history, Ritem_invert
     invisible(.Call('BWPMF_train_once', PACKAGE = 'BWPMF', Rmodel, Rtraining_history, Rtesting_history, Ritem_inverted_index))
 }
 
+train <- function(Rmodel, Rtraining_history, Rtesting_history, Ritem_inverted_index, iteration) {
+    .Call('BWPMF_train', PACKAGE = 'BWPMF', Rmodel, Rtraining_history, Rtesting_history, Ritem_inverted_index, iteration)
+}
+
 pmf_logloss <- function(Rmodel, Rhistory) {
     .Call('BWPMF_pmf_logloss', PACKAGE = 'BWPMF', Rmodel, Rhistory)
 }

@@ -252,6 +252,21 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// train
+SEXP train(SEXP Rmodel, SEXP Rtraining_history, SEXP Rtesting_history, SEXP Ritem_inverted_index, int iteration);
+RcppExport SEXP BWPMF_train(SEXP RmodelSEXP, SEXP Rtraining_historySEXP, SEXP Rtesting_historySEXP, SEXP Ritem_inverted_indexSEXP, SEXP iterationSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type Rmodel(RmodelSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type Rtraining_history(Rtraining_historySEXP);
+    Rcpp::traits::input_parameter< SEXP >::type Rtesting_history(Rtesting_historySEXP);
+    Rcpp::traits::input_parameter< SEXP >::type Ritem_inverted_index(Ritem_inverted_indexSEXP);
+    Rcpp::traits::input_parameter< int >::type iteration(iterationSEXP);
+    __result = Rcpp::wrap(train(Rmodel, Rtraining_history, Rtesting_history, Ritem_inverted_index, iteration));
+    return __result;
+END_RCPP
+}
 // pmf_logloss
 double pmf_logloss(SEXP Rmodel, SEXP Rhistory);
 RcppExport SEXP BWPMF_pmf_logloss(SEXP RmodelSEXP, SEXP RhistorySEXP) {
