@@ -1,5 +1,7 @@
 library(BWPMF)
-history <- deserialize_history(readRDS(system.file("2015-10-01-100.txt.history", package = "BWPMF")))
+src.path <- system.file("2015-10-01-100.txt", package = "BWPMF")
+encode(src.path)
+history <- encode_data(src.path)
 history_size <- check_history(history)
 stopifnot(history_size == 3970)
 history_non_zero_size <- count_non_zero_of_history(history)
@@ -22,12 +24,15 @@ pmf <- list(
   training_mae = numeric(n),
   testing_mae = numeric(n)
 )
-for(i in 1:1000) {
+if (interactive()) pb <- txtProgressBar(max = n, style = 3)
+for(i in 1:n) {
+  if (interactive()) setTxtProgressBar(pb, i)
   pmf$time[i] <- system.time(train_once(m, training_history, testing_history, item_inverted_index))[3]
-  cat(sprintf("training logloss: %f mae: %f testing logloss: %f mae: %f\n", 
-              pmf$training_logloss[i] <- pmf_logloss(m, training_history), 
-              pmf$training_mae[i] <- pmf_mae(m, training_history),
-              pmf$testing_logloss[i] <- pmf_logloss(m, testing_history), 
-              pmf$testing_mae[i] <- pmf_mae(m, testing_history)))
+#   cat(sprintf("training logloss: %f mae: %f testing logloss: %f mae: %f\n", 
+              pmf$training_logloss[i] <- pmf_logloss(m, training_history)#, 
+              pmf$training_mae[i] <- pmf_mae(m, training_history)#,
+              pmf$testing_logloss[i] <- pmf_logloss(m, testing_history)#, 
+              pmf$testing_mae[i] <- pmf_mae(m, testing_history)#))
 }
-stopifnot(diff(tail(pmf$training_logloss, 900)) > 0)
+if (interactive()) close(pb)
+stopifnot(diff(tail(pmf$training_logloss, 800)) > 0)
