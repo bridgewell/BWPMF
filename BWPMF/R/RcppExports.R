@@ -41,8 +41,8 @@ clean_hostname <- function() {
     invisible(.Call('BWPMF_clean_hostname', PACKAGE = 'BWPMF'))
 }
 
-encode <- function(path, progress = 0) {
-    invisible(.Call('BWPMF_encode', PACKAGE = 'BWPMF', path, progress))
+encode <- function(path, user_visit_lower_bound = 0L, progress = 0) {
+    invisible(.Call('BWPMF_encode', PACKAGE = 'BWPMF', path, user_visit_lower_bound, progress))
 }
 
 encode_data <- function(path, progress = 0) {
