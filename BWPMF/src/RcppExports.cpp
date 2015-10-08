@@ -106,13 +106,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // encode
-void encode(const std::string& path, double progress);
-RcppExport SEXP BWPMF_encode(SEXP pathSEXP, SEXP progressSEXP) {
+void encode(const std::string& path, size_t user_visit_lower_bound, double progress);
+RcppExport SEXP BWPMF_encode(SEXP pathSEXP, SEXP user_visit_lower_boundSEXP, SEXP progressSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< const std::string& >::type path(pathSEXP);
+    Rcpp::traits::input_parameter< size_t >::type user_visit_lower_bound(user_visit_lower_boundSEXP);
     Rcpp::traits::input_parameter< double >::type progress(progressSEXP);
-    encode(path, progress);
+    encode(path, user_visit_lower_bound, progress);
     return R_NilValue;
 END_RCPP
 }

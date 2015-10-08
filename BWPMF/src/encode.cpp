@@ -129,7 +129,7 @@ const std::pair<std::string, int>& two_comp(const std::string& src) {
 }
 
 //[[Rcpp::export]]
-void encode(const std::string& path, double progress = 0) {
+void encode(const std::string& path, size_t user_visit_lower_bound = 0, double progress = 0) {
   std::ifstream input(path.c_str());
   static std::vector<std::string> buf1, buf2;
   std::shared_ptr<boost::progress_display> pb(NULL);
@@ -139,9 +139,10 @@ void encode(const std::string& path, double progress = 0) {
     boost::split(buf1, str, boost::is_any_of("\1"));
     if (buf1.size() < 2) throw std::logic_error("invalid data");
     std::string& cookie(buf1[0]);
-    encode_cookie(cookie);
     boost::split(buf2, buf1[1], boost::is_any_of("\2"));
     if (buf2.size() < 1) throw std::logic_error("invalid user data");
+    if (buf2.size() < user_visit_lower_bound) continue;
+    encode_cookie(cookie);
     for(const std::string& s : buf2) {
       const std::string& s2(first_comp(s));
       if (s2.size() > 0) {
@@ -169,7 +170,7 @@ SEXP encode_data(const std::string& path, double progress = 0) {
     if (buf1.size() < 2) throw std::logic_error("invalid data");
     std::string& cookie(buf1[0]);
     auto itor_cookie = cookie_dict.find(cookie);
-    if (itor_cookie == cookie_dict.end()) throw std::logic_error("Unknown cookie");
+    if (itor_cookie == cookie_dict.end()) continue;
     UserData& user_data(history.userdata[itor_cookie->second]);
     if (user_data.size() > 0) throw std::logic_error("Duplicated cookie");
     boost::split(buf2, buf1[1], boost::is_any_of("\2"));
