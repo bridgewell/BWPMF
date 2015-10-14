@@ -15,13 +15,13 @@ stopifnot(check_history(training_history) + check_history(testing_history) == hi
 stopifnot(count_non_zero_of_history(training_history) + count_non_zero_of_history(testing_history) == history_non_zero_size)
 
 
-m <- init_model(.1, .1, .1, .1, .1, .1, 10, training_history)
+m <- init_model(.1, .1, .1, .1, .1, .1, 2, training_history)
 
 phi <- init_phi(m, training_history)
 print_phi_index(phi)
 print_history_index(training_history)
 test_phi(phi, training_history)
-n <- 1000
+n <- 1
 pmf <- list(
   time = numeric(n),
   training_logloss = numeric(n),
@@ -43,4 +43,3 @@ for(i in 1:n) {
               # pmf$testing_mae[i] <- pmf_mae(m, testing_history)#))
 }
 if (interactive()) close(pb)
-stopifnot(diff(tail(pmf$training_logloss, 800)) > 0)

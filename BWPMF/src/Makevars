@@ -2,7 +2,7 @@ CXX_STD = CXX11
 
 PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) -lboost_serialization -lboost_iostreams
 
-PKG_CXXFLAGS = -I. -Winvalid-pch -D CHECK_BOUNDARY #-DNOISY_DEBUG #$(SHLIB_OPENMP_CXXFLAGS) 
+PKG_CXXFLAGS = -I. -Winvalid-pch -DCHECK_BOUNDARY #-DNOISY_DEBUG #$(SHLIB_OPENMP_CXXFLAGS) 
 
 all : stdafx.h.gch $(SHLIB)
 
