@@ -4,38 +4,6 @@ using namespace Rcpp;
 
 RCPP_EXPOSED_CLASS(Model)
 
-// typedef std::vector<double> Phi;
-// typedef std::vector< std::pair<size_t, Phi> > UserDataPhi;
-// typedef std::vector<UserDataPhi> UserItemPhi;
-// static UserItemPhi phi;
-// 
-// typedef std::vector< std::vector< std::pair<size_t, size_t> > > ItemInvertedIndex;
-// 
-// // [[Rcpp::export]]
-// SEXP compute_inverted_index(SEXP Rmodel, SEXP Rhistory) {
-//   Model* pmodel(as<Model*>(Rmodel));
-//   Model& model(*pmodel);
-//   XPtr<History> phistory(Rhistory);
-//   const History& history(*phistory);
-//   XPtr<ItemInvertedIndex> retval(new ItemInvertedIndex(model.item_param.size()));
-//   ItemInvertedIndex& item_inverted_index(*retval);
-//   for(size_t user = 0;user < history.userdata.size();user++) {
-//     const UserData& user_data(history.userdata[user]);
-//     for(size_t j = 0;j < user_data.size();j++) {
-//       const auto& element(user_data[j]);
-//       const size_t item = element.first;
-//       item_inverted_index[item].push_back(std::make_pair(user, j));
-//     }
-//   }
-// #pragma omp parallel for
-//   for(size_t item = 0;item < model.item_param.size();item++) {
-//     auto& v(item_inverted_index[item]);
-//     v.reserve(v.size());
-//   }
-//   return retval;
-// }
-// 
-
 //[[Rcpp::export]]
 SEXP init_phi(SEXP Rmodel, SEXP Rhistory) {
   Model* pmodel(as<Model*>(Rmodel));
@@ -68,18 +36,16 @@ void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rtesting_history, SEXP Rphi, Fu
 #pragma omp parallel
   {
     std::vector<double> local_item_sum(K, 0.0), local_user_sum(K, 0.0);
-#pragma omp single
+#pragma omp master
     logger(Rf_mkString("Calculating phi..."));
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
 #pragma omp for
     for(size_t user = 0;user < history.user_size;user++) {
-#ifdef NOISY_DDEBUG
-      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
-#endif
       // Phi *pphi_start = phi_list(user), *pphi_end = phi_list(user + 1);
       auto pphi_range = phi_list.range(user);
-#ifdef NOISY_DDEBUG
-      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
-#endif
       const ItemCount *item_count = history.data(user);
 #ifdef NOISY_DEBUG
       if (history.data.size(user) != phi_list.size(user)) throw std::logic_error(
@@ -127,13 +93,29 @@ void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rtesting_history, SEXP Rphi, Fu
         item_count++;
       }
     }
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
 
-#pragma omp single
+#pragma omp master
     logger(Rf_mkString("Updating user parameters..."));
 
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
 #pragma omp single
     std::fill(item_sum.begin(), item_sum.end(), 0.0);
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
     std::fill(local_item_sum.begin(), local_item_sum.end(), 0.0);
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
 #pragma omp for
     for(size_t item = 0;item < model.item_size;item++) {
       Param& item_param(model.item_param[item]);
@@ -141,10 +123,19 @@ void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rtesting_history, SEXP Rphi, Fu
         local_item_sum[k] += item_param.shp1[k] / item_param.rte1[k];
       }
     }
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
+#pragma omp critical
     for(int k = 0;k < K;k++) {
-#pragma omp atomic
       item_sum[k] += local_item_sum[k];
     }
+#pragma omp barrier
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
 #pragma omp for
     for(size_t user = 0;user < history.user_size;user++) {
       Param& user_param(model.user_param[user]);
@@ -164,6 +155,10 @@ void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rtesting_history, SEXP Rphi, Fu
         pphi++;
       }
     }
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
 #pragma omp for
     for(size_t user = 0;user < history.user_size;user++) {
       Param& user_param(model.user_param[user]);
@@ -172,14 +167,30 @@ void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rtesting_history, SEXP Rphi, Fu
         user_param.rte2 += user_param.shp1[k] / user_param.rte1[k];
       }
     }
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
 
     
-#pragma omp single
+#pragma omp master
     logger(Rf_mkString("Updating item parameters..."));
     
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
 #pragma omp single
     std::fill(user_sum.begin(), user_sum.end(), 0.0);
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
     std::fill(local_user_sum.begin(), local_user_sum.end(), 0.0);
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
 #pragma omp for
     for(size_t user = 0;user < model.user_size;user++) {
       Param& user_param(model.user_param[user]);
@@ -187,10 +198,19 @@ void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rtesting_history, SEXP Rphi, Fu
         local_user_sum[k] += user_param.shp1[k] / user_param.rte1[k];
       }
     }
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
+#pragma omp critical
     for(int k = 0;k < K;k++) {
-#pragma omp atomic
       user_sum[k] += local_user_sum[k];
     }
+#pragma omp barrier
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
 #pragma omp for
     for(size_t item = 0;item < model.item_size;item++) {
       Param& item_param(model.item_param[item]);
@@ -199,6 +219,10 @@ void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rtesting_history, SEXP Rphi, Fu
         return input + item_param.shp2 / item_param.rte2;
       });
     }
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
 #pragma omp for
     for(size_t user = 0;user < history.user_size;user++) {
       auto range = history.data.range(user);
@@ -216,6 +240,10 @@ void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rtesting_history, SEXP Rphi, Fu
         pphi++;
       }
     }
+#ifdef NOISY_DDEBUG
+#pragma omp master
+      Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+#endif
 #pragma omp for
     for(size_t item = 0;item < model.item_size;item++) {
       Param& item_param(model.item_param[item]);
@@ -280,15 +308,15 @@ double pmf_logloss(SEXP Rmodel, SEXP Rhistory) {
       }
     }
     
-    for(int k = 0;k < model.K;k++) {
-#pragma omp atomic
-      user_sum[k] += local_user_sum[k];
-#pragma omp atomic
-      item_sum[k] += local_item_sum[k];
+#pragma omp critical
+    {
+      for(int k = 0;k < model.K;k++) {
+        user_sum[k] += local_user_sum[k];
+        item_sum[k] += local_item_sum[k];
+      }
+      retval += local_retval;
     }
-#pragma omp atomic
-    retval += local_retval;
-  }
+  } // #pragma omp parallel
   for(int k = 0;k < model.K;k++) {
     retval -= user_sum[k] * item_sum[k];
   }

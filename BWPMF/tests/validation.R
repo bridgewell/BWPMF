@@ -44,3 +44,4 @@ for(i in 1:n) {
 }
 if (interactive()) close(pb)
 stopifnot(diff(tail(pmf$training_logloss, 800)) > 0)
+pmf$training_logloss
