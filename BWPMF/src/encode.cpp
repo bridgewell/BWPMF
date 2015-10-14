@@ -1,44 +1,67 @@
-#include <boost/algorithm/string.hpp>
-#include <boost/progress.hpp>
-#include <Rcpp.h>
-#include "bwpmf.h"
-#include "rcpp_serialization.h"
-
-namespace boost {
-namespace serialization {
-
-template<class Archive>
-void serialize(Archive& ar, History& history, const unsigned int version) {
-  ar & history.cookie_size;
-  ar & history.hostname_size;
-  ar & history.userdata;
-}
-
-}
-}
+#include "stdafx.h"
 
 using namespace Rcpp;
 
 Dictionary cookie_dict, hostname_dict;
 
-//[[Rcpp::export]]
-SEXP serialize_cookie() {
-  return rcpp_serialize(cookie_dict, true, true);
+template <typename T>
+SEXP serialize(SEXP Rpath, const T& target) {
+  const std::string path(as<std::string>(Rpath));
+  std::ofstream os(path.c_str());
+  boost::iostreams::filtering_stream<boost::iostreams::output> f;
+  f.push(boost::iostreams::gzip_compressor());
+  f.push(os);
+  boost::archive::binary_oarchive oa(f);
+  oa << target;
+  return R_NilValue;
 }
 
 //[[Rcpp::export]]
-void deserialize_cookie(RawVector src) {
+SEXP serialize_cookie(SEXP Rpath = R_NilValue) {
+  if (Rpath == R_NilValue) {
+    return rcpp_serialize(cookie_dict, true, true);
+  } else {
+    return serialize(Rpath, cookie_dict);
+  }
+}
+
+//[[Rcpp::export]]
+void deserialize_cookie_raw(RawVector src) {
   rcpp_deserialize(cookie_dict, src, true, true);
 }
 
-//[[Rcpp::export]]
-SEXP serialize_hostname() {
-  return rcpp_serialize(hostname_dict, true, true);
+template<typename T>
+void deserialize(const std::string& path, T& target) {
+  std::ifstream is(path.c_str());
+  boost::iostreams::filtering_stream<boost::iostreams::input> f;
+  f.push(boost::iostreams::gzip_decompressor());
+  f.push(is);
+  boost::archive::binary_iarchive ia(f);
+  ia >> target;
 }
 
 //[[Rcpp::export]]
-void deserialize_hostname(RawVector src) {
+void deserialize_cookie_path(const std::string& path) {
+  deserialize(path, cookie_dict);
+}
+
+//[[Rcpp::export]]
+SEXP serialize_hostname(SEXP Rpath = R_NilValue) {
+  if (Rpath == R_NilValue) {
+    return rcpp_serialize(hostname_dict, true, true);
+  } else {
+    return serialize(Rpath, hostname_dict);
+  }
+}
+
+//[[Rcpp::export]]
+void deserialize_hostname_raw(RawVector src) {
   rcpp_deserialize(hostname_dict, src, true, true);
+}
+
+//[[Rcpp::export]]
+void deserialize_hostname_path(const std::string& path) {
+  deserialize(path, hostname_dict);
 }
 
 void encode(const std::string& key, Dictionary& dict) {
@@ -155,67 +178,71 @@ void encode(const std::string& path, size_t user_visit_lower_bound = 0, double p
 
 //[[Rcpp::export]]
 SEXP encode_data(const std::string& path, double progress = 0) {
-  std::ifstream input(path.c_str());
   static std::vector<std::string> buf1, buf2;
   std::shared_ptr<boost::progress_display> pb(NULL);
-  if (progress > 0) pb.reset(new boost::progress_display(progress));
-  XPtr<History> retval(new History());
-  History& history(*retval);
-  history.userdata.resize(cookie_dict.size());
-  history.cookie_size = cookie_dict.size();
-  history.hostname_size = hostname_dict.size();
-  for(std::string str ; std::getline(input, str);) {
-    if (progress > 0) pb->operator++();
-    boost::split(buf1, str, boost::is_any_of("\1"));
-    if (buf1.size() < 2) throw std::logic_error("invalid data");
-    std::string& cookie(buf1[0]);
-    auto itor_cookie = cookie_dict.find(cookie);
-    if (itor_cookie == cookie_dict.end()) continue;
-    UserData& user_data(history.userdata[itor_cookie->second]);
-    if (user_data.size() > 0) throw std::logic_error("Duplicated cookie");
-    boost::split(buf2, buf1[1], boost::is_any_of("\2"));
-    if (buf2.size() < 1) throw std::logic_error("invalid user data");
-//     std::vector<double> hostname_id;
-//     std::vector<int> count;
-    for(const std::string& s : buf2) {
-      const std::pair<std::string, int>& comp(two_comp(s));
-      if (comp.first.size() > 0) {
-        auto itor_hostname = hostname_dict.find(comp.first);
-        if (itor_hostname == hostname_dict.end()) throw std::logic_error("Unknown hostname");
-//         hostname_id.push_back(itor_hostname->second);
-//         count.push_back(comp.second);
-        user_data.push_back(HostnameCount(itor_hostname->second, comp.second));
+  std::vector<std::vector<ItemCount> > history_buffer(cookie_dict.size(), std::vector<ItemCount>());
+  {
+    std::ifstream input(path.c_str());
+    if (progress > 0) pb.reset(new boost::progress_display(progress));
+    for(std::string str ; std::getline(input, str);) {
+      if (progress > 0) pb->operator++();
+      boost::split(buf1, str, boost::is_any_of("\1"));
+      if (buf1.size() < 2) throw std::logic_error("invalid data");
+      std::string& cookie(buf1[0]);
+      auto itor_cookie = cookie_dict.find(cookie);
+      if (itor_cookie == cookie_dict.end()) continue;
+      std::vector<ItemCount>& UserData(history_buffer[itor_cookie->second]);
+      if (UserData.size() > 0) throw std::logic_error("Duplicated cookie");
+      boost::split(buf2, buf1[1], boost::is_any_of("\2"));
+      if (buf2.size() < 1) throw std::logic_error("invalid user data");
+      for(const std::string& s : buf2) {
+        const std::pair<std::string, int>& comp(two_comp(s));
+        if (comp.first.size() > 0) {
+          auto itor_hostname = hostname_dict.find(comp.first);
+          if (itor_hostname == hostname_dict.end()) throw std::logic_error("Unknown hostname");
+          UserData.push_back(ItemCount(itor_hostname->second, comp.second));
+        }
       }
     }
   }
-  return retval;
+  
+  return XPtr<History>(new History(history_buffer, hostname_dict.size()));
 }
 
 //[[Rcpp::export]]
-SEXP serialize_history(SEXP Rhistory) {
+SEXP serialize_history(SEXP Rhistory, SEXP Rpath = R_NilValue) {
   XPtr<History> phistory(Rhistory);
   History& history(*phistory);
-  return rcpp_serialize(history, true, true);
+  if (Rpath == R_NilValue) {
+    return rcpp_serialize(history, true, true);
+  } else {
+    return serialize(Rpath, history);
+  }
 }
 
 //[[Rcpp::export]]
-SEXP deserialize_history(RawVector src) {
+SEXP deserialize_history_raw(RawVector src) {
   XPtr<History> retval(new History());
   rcpp_deserialize(*retval, src, true, true);
   return retval;
 }
 
 //[[Rcpp::export]]
+SEXP deserialize_history_path(const std::string& path) {
+  XPtr<History> retval(new History());
+  deserialize(path, *retval);
+  return retval;
+}
+
+//[[Rcpp::export]]
 void print_history(SEXP Rhistory) {
   XPtr<History> phistory(Rhistory);
-  const History& history(*phistory);
-  for(size_t user = 0;user < history.userdata.size();user++) {
-    const auto& user_data(history.userdata[user]);
-    if (user_data.size() == 0) continue;
+  History& history(*phistory);
+  for(size_t user = 0;user < history.user_size;user++) {
     Rprintf("user(%zu): ", user);
-    for(const auto& element : user_data) {
-      Rprintf("(item: %zu, count: %d) ", element.first, element.second);
-    }
+    history.data(user, [](const ItemCount& ic) {
+      Rprintf("(item: %zu, count:%d) ", ic.item, ic.count);
+    });
     Rprintf("\n");
   }
 }
@@ -227,15 +254,14 @@ NumericVector check_history(SEXP Rhistory) {
   History& history(*phistory);
   size_t error = 0, count = 0;
 #pragma omp parallel for reduction( + : error, count )
-  for(size_t i = 0;i < history.userdata.size();i++) {
-    UserData& user_data(history.userdata[i]);
-    std::set<int> check_tmp;
+  for(size_t user = 0;user < history.user_size;user++) {
     int local_error = 0, local_count = 0;
-    for(const HostnameCount& x : user_data) {
-      if (check_tmp.find(x.first) != check_tmp.end()) local_error += 1;
-      check_tmp.insert(x.first);
-      local_count += x.second;
-    }
+    std::set<size_t> check_tmp;
+    history.data(user, [&check_tmp, &local_error, &local_count](const ItemCount& ic) {
+      if (check_tmp.find(ic.item) != check_tmp.end()) local_error += 1;
+      check_tmp.insert(ic.item);
+      local_count += ic.count;
+    });
     error += local_error;
     count += local_count;
   }
@@ -244,29 +270,25 @@ NumericVector check_history(SEXP Rhistory) {
 }
 
 //[[Rcpp::export]]
-SEXP count_non_zero_of_history(SEXP Rhistory) {
+size_t count_non_zero_of_history(SEXP Rhistory) {
   XPtr<History> phistory(Rhistory);
   History& history(*phistory);
   size_t non_zero_count = 0;
-#pragma omp parallel for reduction( + : non_zero_count)   
-  for(size_t i = 0;i < history.userdata.size();i++) {
-    non_zero_count += history.userdata[i].size();
-  }
-  return wrap(non_zero_count);
+  return history.data.get_total_size();
 }
 
 //[[Rcpp::export]]
 size_t count_cookie_history(SEXP Rhistory) {
   XPtr<History> phistory(Rhistory);
   History& history(*phistory);
-  return history.cookie_size;
+  return history.user_size;
 }
 
 //[[Rcpp::export]]
 size_t count_hostname_history(SEXP Rhistory) {
   XPtr<History> phistory(Rhistory);
   History& history(*phistory);
-  return history.hostname_size;
+  return history.item_size;
 }
 
 //[[Rcpp::export]]
@@ -274,36 +296,17 @@ SEXP extract_history(SEXP Rhistory, NumericVector id) {
   XPtr<History> phistory(Rhistory);
   History& history(*phistory);
   std::sort(id.begin(), id.end());
-  std::vector<size_t> group_size(history.userdata.size(), 0);
-  // count size
-#pragma omp parallel for
-  for(size_t i = 0;i < history.userdata.size();i++) {
-    group_size[i] = history.userdata[i].size();
-  }
-#ifdef NOISY_DEBUG
-  Function("print")(wrap(group_size));
-#endif
-  // cumulative sum
-  std::vector<size_t> cumulative_group_size(group_size);
-  for(size_t i = 1;i < group_size.size();i++) {
-    cumulative_group_size[i] = cumulative_group_size[i-1] + group_size[i];
-  }
-#ifdef NOISY_DEBUG
-  Function("print")(wrap(cumulative_group_size));
-#endif
   // calculate group of id
   std::vector<size_t> id_group(id.size(), 0);
+  const size_t *start = history.data.get_index(), *end = history.data.get_index() + history.data.get_index_size();
 #pragma omp parallel for
   for(size_t i = 0;i < id.size();i++) {
-    auto j = std::upper_bound(cumulative_group_size.begin(), cumulative_group_size.end(), id[i] - 1);
-    auto group_idx = j - cumulative_group_size.begin();
+    auto j = std::upper_bound(start, end, id[i] - 1);
+    auto group_idx = j - history.data.get_index();
     id_group[i] = group_idx;
   }
   // pick out these samples
-  XPtr<History> retval(new History);
-  retval->cookie_size = history.cookie_size;
-  retval->hostname_size = history.hostname_size;
-  retval->userdata.resize(history.cookie_size);
+  std::vector< std::vector<ItemCount> > new_history_buffer(history.user_size, std::vector<ItemCount>());
   {
     size_t i = id.size();
     while(i > 0) {
@@ -312,23 +315,21 @@ SEXP extract_history(SEXP Rhistory, NumericVector id) {
       Rprintf("i: %zu\n", i);
       Rprintf("id[i]: %zu\n", (size_t) id[i]);
       Rprintf("id_group[i]: %zu\n", id_group[i]);
-      Rprintf("cumulative_group_size[id_group[i] - 1]): %zu\n", cumulative_group_size[id_group[i] - 1]);
+      Rprintf("cumulative_group_size[id_group[i] - 1]): %zu\n", history.data.size(id_group[i] - 1));
 #endif
-      size_t inner_group_id = (id_group[i] > 0 ? id[i] - cumulative_group_size[id_group[i] - 1] : id[i]);
+      size_t inner_group_id = (id_group[i] > 0 ? id[i] - start[id_group[i] - 1] : id[i]);
 #ifdef NOISY_DEBUG
       Rprintf("inner_group_id: %zu\n", inner_group_id);
 #endif
-      if (inner_group_id > history.userdata[id_group[i]].size()) throw std::logic_error("Invalid size ( > size )");
+      if (inner_group_id > history.data.size(id_group[i] - 1)) throw std::logic_error("Invalid size ( > size )");
       if (inner_group_id == 0) throw std::logic_error("Invalid size ( == 0 )");
-      auto target = history.userdata[id_group[i]].begin() + (inner_group_id - 1);
-      retval->userdata[id_group[i]].push_back(*target);
-      history.userdata[id_group[i]].erase(target);
+      ItemCount* target = history.data(id_group[i] - 1) + (inner_group_id - 1);
+      new_history_buffer[id_group[i] - 1].push_back(*target);
+      target->count = -1;
     }
   }
-#pragma omp parallel for
-  for(size_t user = 0;user < retval->cookie_size;user++) {
-    auto& user_data(retval->userdata[user]);
-    user_data.reserve(user_data.size());
-  }
-  return retval;
+  history.data.clean([](const ItemCount& ic) {
+    return ic.count > 0;
+  });
+  return XPtr<History>(new History(new_history_buffer, history.item_size));
 }

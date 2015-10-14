@@ -5,43 +5,75 @@
 
 using namespace Rcpp;
 
+// set_K
+void set_K(int K);
+RcppExport SEXP BWPMF_set_K(SEXP KSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    set_K(K);
+    return R_NilValue;
+END_RCPP
+}
 // serialize_cookie
-SEXP serialize_cookie();
-RcppExport SEXP BWPMF_serialize_cookie() {
+SEXP serialize_cookie(SEXP Rpath);
+RcppExport SEXP BWPMF_serialize_cookie(SEXP RpathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    __result = Rcpp::wrap(serialize_cookie());
+    Rcpp::traits::input_parameter< SEXP >::type Rpath(RpathSEXP);
+    __result = Rcpp::wrap(serialize_cookie(Rpath));
     return __result;
 END_RCPP
 }
-// deserialize_cookie
-void deserialize_cookie(RawVector src);
-RcppExport SEXP BWPMF_deserialize_cookie(SEXP srcSEXP) {
+// deserialize_cookie_raw
+void deserialize_cookie_raw(RawVector src);
+RcppExport SEXP BWPMF_deserialize_cookie_raw(SEXP srcSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< RawVector >::type src(srcSEXP);
-    deserialize_cookie(src);
+    deserialize_cookie_raw(src);
+    return R_NilValue;
+END_RCPP
+}
+// deserialize_cookie_path
+void deserialize_cookie_path(const std::string& path);
+RcppExport SEXP BWPMF_deserialize_cookie_path(SEXP pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const std::string& >::type path(pathSEXP);
+    deserialize_cookie_path(path);
     return R_NilValue;
 END_RCPP
 }
 // serialize_hostname
-SEXP serialize_hostname();
-RcppExport SEXP BWPMF_serialize_hostname() {
+SEXP serialize_hostname(SEXP Rpath);
+RcppExport SEXP BWPMF_serialize_hostname(SEXP RpathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    __result = Rcpp::wrap(serialize_hostname());
+    Rcpp::traits::input_parameter< SEXP >::type Rpath(RpathSEXP);
+    __result = Rcpp::wrap(serialize_hostname(Rpath));
     return __result;
 END_RCPP
 }
-// deserialize_hostname
-void deserialize_hostname(RawVector src);
-RcppExport SEXP BWPMF_deserialize_hostname(SEXP srcSEXP) {
+// deserialize_hostname_raw
+void deserialize_hostname_raw(RawVector src);
+RcppExport SEXP BWPMF_deserialize_hostname_raw(SEXP srcSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< RawVector >::type src(srcSEXP);
-    deserialize_hostname(src);
+    deserialize_hostname_raw(src);
+    return R_NilValue;
+END_RCPP
+}
+// deserialize_hostname_path
+void deserialize_hostname_path(const std::string& path);
+RcppExport SEXP BWPMF_deserialize_hostname_path(SEXP pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const std::string& >::type path(pathSEXP);
+    deserialize_hostname_path(path);
     return R_NilValue;
 END_RCPP
 }
@@ -130,24 +162,36 @@ BEGIN_RCPP
 END_RCPP
 }
 // serialize_history
-SEXP serialize_history(SEXP Rhistory);
-RcppExport SEXP BWPMF_serialize_history(SEXP RhistorySEXP) {
+SEXP serialize_history(SEXP Rhistory, SEXP Rpath);
+RcppExport SEXP BWPMF_serialize_history(SEXP RhistorySEXP, SEXP RpathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< SEXP >::type Rhistory(RhistorySEXP);
-    __result = Rcpp::wrap(serialize_history(Rhistory));
+    Rcpp::traits::input_parameter< SEXP >::type Rpath(RpathSEXP);
+    __result = Rcpp::wrap(serialize_history(Rhistory, Rpath));
     return __result;
 END_RCPP
 }
-// deserialize_history
-SEXP deserialize_history(RawVector src);
-RcppExport SEXP BWPMF_deserialize_history(SEXP srcSEXP) {
+// deserialize_history_raw
+SEXP deserialize_history_raw(RawVector src);
+RcppExport SEXP BWPMF_deserialize_history_raw(SEXP srcSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< RawVector >::type src(srcSEXP);
-    __result = Rcpp::wrap(deserialize_history(src));
+    __result = Rcpp::wrap(deserialize_history_raw(src));
+    return __result;
+END_RCPP
+}
+// deserialize_history_path
+SEXP deserialize_history_path(const std::string& path);
+RcppExport SEXP BWPMF_deserialize_history_path(SEXP pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const std::string& >::type path(pathSEXP);
+    __result = Rcpp::wrap(deserialize_history_path(path));
     return __result;
 END_RCPP
 }
@@ -173,7 +217,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // count_non_zero_of_history
-SEXP count_non_zero_of_history(SEXP Rhistory);
+size_t count_non_zero_of_history(SEXP Rhistory);
 RcppExport SEXP BWPMF_count_non_zero_of_history(SEXP RhistorySEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
@@ -217,39 +261,69 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// compute_inverted_index
-SEXP compute_inverted_index(SEXP Rmodel, SEXP Rhistory);
-RcppExport SEXP BWPMF_compute_inverted_index(SEXP RmodelSEXP, SEXP RhistorySEXP) {
+// test_list_of_list
+void test_list_of_list();
+RcppExport SEXP BWPMF_test_list_of_list() {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    test_list_of_list();
+    return R_NilValue;
+END_RCPP
+}
+// test_phi
+void test_phi(SEXP Rphi, SEXP Rhistory);
+RcppExport SEXP BWPMF_test_phi(SEXP RphiSEXP, SEXP RhistorySEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type Rphi(RphiSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type Rhistory(RhistorySEXP);
+    test_phi(Rphi, Rhistory);
+    return R_NilValue;
+END_RCPP
+}
+// print_phi_index
+void print_phi_index(SEXP Rphi);
+RcppExport SEXP BWPMF_print_phi_index(SEXP RphiSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type Rphi(RphiSEXP);
+    print_phi_index(Rphi);
+    return R_NilValue;
+END_RCPP
+}
+// print_history_index
+void print_history_index(SEXP Rhistory);
+RcppExport SEXP BWPMF_print_history_index(SEXP RhistorySEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type Rhistory(RhistorySEXP);
+    print_history_index(Rhistory);
+    return R_NilValue;
+END_RCPP
+}
+// init_phi
+SEXP init_phi(SEXP Rmodel, SEXP Rhistory);
+RcppExport SEXP BWPMF_init_phi(SEXP RmodelSEXP, SEXP RhistorySEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< SEXP >::type Rmodel(RmodelSEXP);
     Rcpp::traits::input_parameter< SEXP >::type Rhistory(RhistorySEXP);
-    __result = Rcpp::wrap(compute_inverted_index(Rmodel, Rhistory));
+    __result = Rcpp::wrap(init_phi(Rmodel, Rhistory));
     return __result;
 END_RCPP
 }
-// init_phi
-void init_phi(SEXP Rmodel, SEXP Rtraining_history);
-RcppExport SEXP BWPMF_init_phi(SEXP RmodelSEXP, SEXP Rtraining_historySEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< SEXP >::type Rmodel(RmodelSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type Rtraining_history(Rtraining_historySEXP);
-    init_phi(Rmodel, Rtraining_history);
-    return R_NilValue;
-END_RCPP
-}
 // train_once
-void train_once(SEXP Rmodel, SEXP Rtraining_history, SEXP Rtesting_history, SEXP Ritem_inverted_index);
-RcppExport SEXP BWPMF_train_once(SEXP RmodelSEXP, SEXP Rtraining_historySEXP, SEXP Rtesting_historySEXP, SEXP Ritem_inverted_indexSEXP) {
+void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rtesting_history, SEXP Rphi, Function logger);
+RcppExport SEXP BWPMF_train_once(SEXP RmodelSEXP, SEXP RhistorySEXP, SEXP Rtesting_historySEXP, SEXP RphiSEXP, SEXP loggerSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< SEXP >::type Rmodel(RmodelSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type Rtraining_history(Rtraining_historySEXP);
+    Rcpp::traits::input_parameter< SEXP >::type Rhistory(RhistorySEXP);
     Rcpp::traits::input_parameter< SEXP >::type Rtesting_history(Rtesting_historySEXP);
-    Rcpp::traits::input_parameter< SEXP >::type Ritem_inverted_index(Ritem_inverted_indexSEXP);
-    train_once(Rmodel, Rtraining_history, Rtesting_history, Ritem_inverted_index);
+    Rcpp::traits::input_parameter< SEXP >::type Rphi(RphiSEXP);
+    Rcpp::traits::input_parameter< Function >::type logger(loggerSEXP);
+    train_once(Rmodel, Rhistory, Rtesting_history, Rphi, logger);
     return R_NilValue;
 END_RCPP
 }
@@ -262,18 +336,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type Rmodel(RmodelSEXP);
     Rcpp::traits::input_parameter< SEXP >::type Rhistory(RhistorySEXP);
     __result = Rcpp::wrap(pmf_logloss(Rmodel, Rhistory));
-    return __result;
-END_RCPP
-}
-// pmf_mae
-double pmf_mae(SEXP Rmodel, SEXP Rhistory);
-RcppExport SEXP BWPMF_pmf_mae(SEXP RmodelSEXP, SEXP RhistorySEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< SEXP >::type Rmodel(RmodelSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type Rhistory(RhistorySEXP);
-    __result = Rcpp::wrap(pmf_mae(Rmodel, Rhistory));
     return __result;
 END_RCPP
 }

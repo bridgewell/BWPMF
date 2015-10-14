@@ -1,18 +1,23 @@
-#include <Rcpp.h>
-#include "bwpmf.h"
-#include "rcpp_serialization.h"
-#include "omp.h"
+#include "stdafx.h"
 
-Model::Model(const Prior& _prior, int _k, size_t user_size, size_t item_size)
-  : K(_k), user_param(user_size, Param(K)), item_param(item_size, Param(K)), prior(_prior)
+size_t Param::current_param_count = 0;
+
+int Param::K = 0;
+
+Model::Model() 
+  : K(0), prior(), user_size(0), item_size(0), user_param(NULL), item_param(NULL)
+  { }
+
+Model::Model(const Prior& _prior, int _k, size_t _user_size, size_t _item_size)
+  : K(_k), prior(_prior), user_size(_user_size), item_size(_item_size),
+    user_param(new Param[user_size]), item_param(new Param[item_size])
   {
-    const Prior& prior(this->prior);
-#pragma omp parallel default(none) shared(_k) shared(prior)
+    Param::set_K(_k);
+#pragma omp parallel
     {
-      int i;
       unsigned int seed = omp_get_thread_num() + (int) time(NULL);
 #pragma omp for
-      for(size_t i = 0;i < user_param.size();i++) {
+      for(size_t i = 0;i < user_size;i++) {
         Param& param(user_param[i]);
         param.shp2 = prior.a2 + _k * prior.a1;
         param.rte2 = prior.a2 / prior.b2* (0.9 + rand_r(&seed) * 0.2 / RAND_MAX);
@@ -21,11 +26,9 @@ Model::Model(const Prior& _prior, int _k, size_t user_size, size_t item_size)
           // param.rte1[k] = param.shp2 / param.rte2* (0.9 + rand_r(&seed) * 0.2 / RAND_MAX);
           param.rte1[k] = prior.b2 * (0.9 + rand_r(&seed) * 0.2 / RAND_MAX);
         }
-        param.shp1.reserve(_k);
-        param.rte1.reserve(_k);
       }
 #pragma omp for
-      for(size_t item = 0;item < item_param.size();item++) {
+      for(size_t item = 0;item < item_size;item++) {
         Param& param(item_param[item]);
         param.shp2 = prior.c2 + _k * prior.c1;
         param.rte2 = prior.c2 / prior.d2 * (0.9 + rand_r(&seed) * 0.2 / RAND_MAX);
@@ -34,13 +37,16 @@ Model::Model(const Prior& _prior, int _k, size_t user_size, size_t item_size)
           // param.rte1[k] = param.shp2 / param.rte2 * (0.9 + rand_r(&seed) * 0.2 / RAND_MAX);
           param.rte1[k] = prior.d2 * (0.9 + rand_r(&seed) * 0.2 / RAND_MAX);
         }
-        param.shp1.reserve(_k);
-        param.rte1.reserve(_k);
       }
     }
-    user_param.reserve(user_param.size());
-    item_param.reserve(item_param.size());
   }
+
+Model::~Model() {
+  delete [] item_param;
+  delete [] user_param;
+}
+
+BOOST_SERIALIZATION_SPLIT_FREE(Model)
 
 namespace boost {
 namespace serialization {
@@ -57,18 +63,45 @@ void serialize(Archive& ar, Prior& p, const unsigned int version) {
 
 template<class Archive>
 void serialize(Archive& ar, Param& param, const unsigned int version) {
-  ar & param.rte1;
-  ar & param.shp1;
+  for(int k = 0;k < Param::K;k++) {
+    ar & param.rte1[k];
+    ar & param.shp1[k];
+  }
   ar & param.rte2;
   ar & param.shp2;
 }
 
 template<class Archive>
-void serialize(Archive& ar, Model& m, const unsigned int version) {
+void save(Archive& ar, const Model& m, const unsigned int version) {
   ar & m.K;
   ar & m.prior;
-  ar & m.user_param;
-  ar & m.item_param;
+  ar & m.user_size;
+  for(size_t user = 0;user < m.user_size;user++) {
+    ar & m.user_param[user];
+  }
+  ar & m.item_size;
+  for(size_t item = 0;item < m.item_size;item++) {
+    ar & m.item_param[item];
+  }
+}
+
+template<class Archive>
+void load(Archive& ar, Model& m, const unsigned int version) {
+  ar & m.K;
+  Param::set_K(m.K);
+  ar & m.prior;
+  ar & m.user_size;
+  delete [] m.user_param;
+  m.user_param = new Param[m.user_size];
+  for(size_t user = 0;user < m.user_size;user++) {
+    ar & m.user_param[user];
+  }
+  ar & m.item_size;
+  delete [] m.item_param;
+  m.item_param = new Param[m.item_size];
+  for(size_t item = 0;item < m.item_size;item++) {
+    ar & m.item_param[item];
+  }
 }
 
 }
@@ -81,19 +114,19 @@ RCPP_EXPOSED_CLASS(Model)
 using namespace Rcpp;
 
 double user_size(Model* m) {
-  return m->user_param.size();
+  return m->user_size;
 }
 
 SEXP user_param(Model* m, double i) {
-  return wrap(m->user_param[i]);
+  return wrap(m->user_param[(size_t )i]);
 }
 
 double item_size(Model* m) {
-  return m->item_param.size();
+  return m->item_size;
 }
 
 SEXP item_param(Model* m, double i) {
-  return wrap(m->item_param[i]);
+  return wrap(m->item_param[(size_t) i]);
 }
 
 void prior_show(Prior* p) {
@@ -103,12 +136,12 @@ void prior_show(Prior* p) {
 
 void param_show(Param* p) {
   Rprintf("Param: \n\tshp1: ");
-  for(auto d : p->shp1) {
-    Rprintf("%f ", d);
+  for(int k = 0;k < Param::K;k++) {
+    Rprintf("%f ", p->shp1[k]);
   }
   Rprintf("\n\tshp2: %f\n\trte1: ", p->shp2);
-  for(auto d : p->rte1) {
-    Rprintf("%f ", d);
+  for(int k = 0;k < Param::K;k++) {
+    Rprintf("%f ", p->rte1[k]);
   }
   Rprintf("\n\trte2: %f\n", p->rte2);
 }
@@ -131,6 +164,27 @@ void model_deserialize(Model* m, const std::string& path) {
   ia >> *m;
 }
 
+SEXP param_shp1(Param* param) {
+  NumericVector retval(Param::K);
+  for(int k = 0;k < Param::K;k++) {
+    retval[k] = param->shp1[k];
+  }
+  return retval;
+}
+
+SEXP param_rte1(Param* param) {
+  NumericVector retval(Param::K);
+  for(int k = 0;k < Param::K;k++) {
+    retval[k] = param->rte1[k];
+  }
+  return retval;
+}
+
+//[[Rcpp::export]]
+void set_K(int K) {
+  Param::set_K(K);
+}
+
 RCPP_MODULE(model) {
 
   class_<Prior>("Prior")
@@ -145,8 +199,8 @@ RCPP_MODULE(model) {
   ;
   
   class_<Param>("Param")
-    .field_readonly("shp1", &Param::shp1)
-    .field_readonly("rte1", &Param::rte1)
+    .method("shp1", &param_shp1)
+    .method("rte1", &param_rte1)
     .field_readonly("shp2", &Param::shp2)
     .field_readonly("rte2", &Param::rte2)
     .method("show", &param_show)

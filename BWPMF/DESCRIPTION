@@ -7,6 +7,7 @@ Author: Your Name
 Maintainer: Your Name <your@email.com>
 Description: More about what it does (maybe more than one line)
 License: GPL (>= 2)
-Imports: methods, Rcpp (>= 0.11.6)
+Depends: methods
+Imports: Rcpp (>= 0.11.6)
 LinkingTo: Rcpp
 RcppModules: model
