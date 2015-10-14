@@ -6,9 +6,9 @@
 
 struct Phi {
   
-  double *data;
+  DTYPE *data;
   
-  Phi() : data(new double[Param::K]) 
+  Phi() : data(new DTYPE[Param::K]) 
   { }
   
   ~Phi() { delete [] data; }

@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include "list_of_list.h"
 
+typedef float DTYPE;
+
 // encoding data
 typedef std::unordered_map<std::string, size_t> Dictionary;
 
@@ -84,11 +86,11 @@ struct Param {
     K = k;
   }
   
-  double *shp1, *rte1;
+  DTYPE *shp1, *rte1;
   
-  double shp2, rte2;
+  DTYPE shp2, rte2;
   
-  Param() : shp1(new double[K]), rte1(new double[K]), shp2(0.0), rte2(0.0) {
+  Param() : shp1(new DTYPE[K]), rte1(new DTYPE[K]), shp2(0.0), rte2(0.0) {
     std::fill_n(shp1, K, 0.0);
     std::fill_n(rte1, K, 0.0);
     current_param_count++;

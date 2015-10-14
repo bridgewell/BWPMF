@@ -43,5 +43,6 @@ for(i in 1:n) {
               # pmf$testing_mae[i] <- pmf_mae(m, testing_history)#))
 }
 if (interactive()) close(pb)
-stopifnot(diff(tail(pmf$training_logloss, 800)) > 0)
+stopifnot(diff(tail(pmf$training_logloss, 800)) > -1e-5)
+for(i in (4:8 * 100)) stopifnot(sum(diff(tail(pmf$training_logloss, i))) > 0)
 pmf$training_logloss
