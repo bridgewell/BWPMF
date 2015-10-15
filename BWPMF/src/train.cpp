@@ -320,7 +320,7 @@ double pmf_logloss(SEXP Rmodel, SEXP Rhistory) {
   for(int k = 0;k < model.K;k++) {
     retval -= user_sum[k] * item_sum[k];
   }
-  return retval;
+  return -retval;
 }
 // 
 // //[[Rcpp::export]]
