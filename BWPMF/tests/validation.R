@@ -33,7 +33,7 @@ print_history(history)
 if (interactive()) pb <- txtProgressBar(max = n, style = 3)
 for(i in 1:n) {
   if (interactive()) setTxtProgressBar(pb, i)
-  pmf$time[i] <- system.time(train_once(m, training_history, testing_history, phi, function(msg) {
+  pmf$time[i] <- system.time(train_once(m, training_history, phi, function(msg) {
     # cat(msg);cat("\n")
   }))[3]
 #   cat(sprintf("training logloss: %f mae: %f testing logloss: %f mae: %f\n", 
@@ -43,6 +43,6 @@ for(i in 1:n) {
               # pmf$testing_mae[i] <- pmf_mae(m, testing_history)#))
 }
 if (interactive()) close(pb)
-stopifnot(diff(tail(pmf$training_logloss, 800)) > -1e-5)
-for(i in (4:8 * 100)) stopifnot(sum(diff(tail(pmf$training_logloss, i))) > 0)
+stopifnot(diff(tail(pmf$training_logloss, 800)) < 1e-5)
+for(i in (4:8 * 100)) stopifnot(sum(diff(tail(pmf$training_logloss, i))) < 0)
 pmf$training_logloss
