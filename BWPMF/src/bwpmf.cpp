@@ -185,6 +185,30 @@ void set_K(int K) {
   Param::set_K(K);
 }
 
+NumericMatrix model_export_user(Model* pmodel) {
+  NumericMatrix retval(pmodel->user_size, pmodel->K);
+#pragma omp parallel for
+  for(size_t user = 0;user < pmodel->user_size;user++) {
+    Param& user_param(pmodel->user_param[user]);
+    for(int k = 0;k < pmodel->K;k++) {
+      retval(user, k) = user_param.shp1[k] / user_param.rte1[k];
+    }
+  }
+  return retval;
+}
+
+NumericMatrix model_export_item(Model* pmodel) {
+  NumericMatrix retval(pmodel->item_size, pmodel->K);
+#pragma omp parallel for
+  for(size_t item = 0;item < pmodel->item_size;item++) {
+    Param& item_param(pmodel->item_param[item]);
+    for(int k = 0;k < pmodel->K;k++) {
+      retval(item, k) = item_param.shp1[k] / item_param.rte1[k];
+    }
+  }
+  return retval;
+}
+
 RCPP_MODULE(model) {
 
   class_<Prior>("Prior")
@@ -216,6 +240,8 @@ RCPP_MODULE(model) {
     .method("item_param", &item_param)
     .method("serialize", &model_serialize)
     .method("deserialize", &model_deserialize)
+    .method("export_user", &model_export_user)
+    .method("export_item", &model_export_item)
   ;
 
 }
