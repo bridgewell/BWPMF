@@ -314,16 +314,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // train_once
-void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rtesting_history, SEXP Rphi, Function logger);
-RcppExport SEXP BWPMF_train_once(SEXP RmodelSEXP, SEXP RhistorySEXP, SEXP Rtesting_historySEXP, SEXP RphiSEXP, SEXP loggerSEXP) {
+void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rphi, Function logger);
+RcppExport SEXP BWPMF_train_once(SEXP RmodelSEXP, SEXP RhistorySEXP, SEXP RphiSEXP, SEXP loggerSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< SEXP >::type Rmodel(RmodelSEXP);
     Rcpp::traits::input_parameter< SEXP >::type Rhistory(RhistorySEXP);
-    Rcpp::traits::input_parameter< SEXP >::type Rtesting_history(Rtesting_historySEXP);
     Rcpp::traits::input_parameter< SEXP >::type Rphi(RphiSEXP);
     Rcpp::traits::input_parameter< Function >::type logger(loggerSEXP);
-    train_once(Rmodel, Rhistory, Rtesting_history, Rphi, logger);
+    train_once(Rmodel, Rhistory, Rphi, logger);
     return R_NilValue;
 END_RCPP
 }

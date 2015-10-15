@@ -117,8 +117,8 @@ init_phi <- function(Rmodel, Rhistory) {
     .Call('BWPMF_init_phi', PACKAGE = 'BWPMF', Rmodel, Rhistory)
 }
 
-train_once <- function(Rmodel, Rhistory, Rtesting_history, Rphi, logger) {
-    invisible(.Call('BWPMF_train_once', PACKAGE = 'BWPMF', Rmodel, Rhistory, Rtesting_history, Rphi, logger))
+train_once <- function(Rmodel, Rhistory, Rphi, logger) {
+    invisible(.Call('BWPMF_train_once', PACKAGE = 'BWPMF', Rmodel, Rhistory, Rphi, logger))
 }
 
 pmf_logloss <- function(Rmodel, Rhistory) {

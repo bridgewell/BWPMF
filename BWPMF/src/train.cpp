@@ -14,15 +14,15 @@ SEXP init_phi(SEXP Rmodel, SEXP Rhistory) {
 }
 
 //[[Rcpp::export]]
-void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rtesting_history, SEXP Rphi, Function logger) {
+void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rphi, Function logger) {
   Model *pmodel(as<Model*>(Rmodel));
   Model& model(*pmodel);
 #ifdef NOISY_DEBUG
   Rprintf("prior: (a1:%f a2:%f b2:%f c1:%f c2:%f d2:%f)\n", model.prior.a1, model.prior.a2, model.prior.b2,
           model.prior.c1, model.prior.c2, model.prior.d2);
 #endif
-  XPtr<History> phistory(Rhistory), ptesting_history(Rtesting_history);
-  History &history(*phistory), &testing_history(*ptesting_history);
+  XPtr<History> phistory(Rhistory);
+  History &history(*phistory);
   if (model.user_size != history.user_size) throw std::invalid_argument("user_size is inconsistent");
   XPtr<PhiList> pphi_list(Rphi);
   PhiList& phi_list(*pphi_list);
