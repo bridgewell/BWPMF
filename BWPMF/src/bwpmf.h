@@ -15,6 +15,8 @@ typedef float DTYPE;
 // encoding data
 typedef std::unordered_map<std::string, size_t> Dictionary;
 
+extern Dictionary cookie_dict, hostname_dict;
+
 // history
 struct ItemCount {
   
