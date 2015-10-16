@@ -1,0 +1,58 @@
+---
+title: "Poisson Matrix Factorization"
+output: 
+  rmarkdown::html_vignette:
+    number_sections: yes
+    toc: yes
+bibliography: BWPMF.bib
+author: Wush Wu
+vignette: >
+  %\VignetteIndexEntry{FeatureHashing}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+# Introduction
+
+Poisson Matrix Factorization is a technique to model the implicit counting 
+feedback such as clicks of the item from the user.
+
+In general, suppose the feedback from user $u$ at item $i$ is $y_{u,i}$, then we 
+assume that
+
+$$y_{u,i} \sim \text{Poisson} \left( \sum_{k=1}^K {\theta_{u,k} \beta_{i,k}} \right),$$
+
+where $K$ is a given integer and $E(y_{u,i}) = \sum_{k=1}^K {\theta_{u,k} \beta_{i,k}}$.
+
+In the following context, we let $\mathbb{U}$ be the collection of all users and
+$\mathbb{I}$ be the collection of all items. $\theta_u$ is a $K$-dimentional vector
+and $\theta_{u,k}$ is the $k$-th element of $\theta_u$. The notation $\beta_i$
+and $\beta_{i,k}$ are similar.
+
+# Hierarchical Poisson Factorization (HPF) Model
+
+In @DBLP:conf/uai/GopalanHB15, Prem Gopalan et al. used a gamma prior to model the 
+PMF model. They assumed:
+
+- For each user $u \in U$: 
+    - There is a sample activity $\xi_u \sim \Gamma(a_2, \frac{a_2}{b_2})$.
+    - For each component $\theta_{u, k}$, the sample preference is 
+    $$\theta_{u,k} \sim \Gamma(a_1, \xi_u).$$
+- For each item $i \in I$:
+    - There is a sample popularity $\eta_i \sim \Gamma(c_2, \frac{c_2}{d_2})$.
+    - For each component $\beta_{i,k}$, the sample attribute is
+    $$\beta_{i,k} \sim \Gamma(c_1, \eta_i).$$
+
+Note that the first parameter of $\Gamma$ is shape parameter and the second one 
+is the rate. Therefore, $E(\xi_u) = b_2$ and $Var(\xi_u) = b_2^2$.
+
+They called this model **Hierarchical Poisson Factorization (HPF) model**.
+
+The HPF has the following benefit of modeling implicit feedback data:
+
+## HPF captures sparse factors. 
+
+The gamma prior on preferences and attributes encourages sparse representations 
+of users and items. 
+
+# Reference

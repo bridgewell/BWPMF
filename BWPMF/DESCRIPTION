@@ -1,13 +1,18 @@
 Package: BWPMF
 Type: Package
-Title: What the package does (short line)
-Version: 1.0
+Title: Fitting Poisson Matrix Factorization with Variational Bayes
+Version: 0.1
 Date: 2015-10-05
-Author: Your Name
-Maintainer: Your Name <your@email.com>
-Description: More about what it does (maybe more than one line)
-License: GPL (>= 2)
+Author: Wush Wu
+Copyright: Bridgewell Inc.
+Maintainer: Wush Wu <wush@bridgewell.com>
+Description: Poisson Matrix Factorization is a useful technique to do inference
+  on data of implicit feedback, such as clicks. This package implement the 
+  algorithm of variational bayes to perform poisson matrix factorization.
+License: GPL (>= 3)
 Depends: methods
 Imports: Rcpp (>= 0.11.6)
 LinkingTo: Rcpp
 RcppModules: model
+SystemRequirements: C++11
+VignetteBuilder: knitr
