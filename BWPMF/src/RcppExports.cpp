@@ -312,16 +312,29 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// test_phi_on_disk
+SEXP test_phi_on_disk(const std::string& path, NumericMatrix value);
+RcppExport SEXP BWPMF_test_phi_on_disk(SEXP pathSEXP, SEXP valueSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const std::string& >::type path(pathSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type value(valueSEXP);
+    __result = Rcpp::wrap(test_phi_on_disk(path, value));
+    return __result;
+END_RCPP
+}
 // init_phi
-SEXP init_phi(SEXP Rmodel, SEXP Rhistory, const std::string& cached_file);
-RcppExport SEXP BWPMF_init_phi(SEXP RmodelSEXP, SEXP RhistorySEXP, SEXP cached_fileSEXP) {
+SEXP init_phi(SEXP Rmodel, SEXP Rhistory, const std::string& cached_file, int cache_size);
+RcppExport SEXP BWPMF_init_phi(SEXP RmodelSEXP, SEXP RhistorySEXP, SEXP cached_fileSEXP, SEXP cache_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< SEXP >::type Rmodel(RmodelSEXP);
     Rcpp::traits::input_parameter< SEXP >::type Rhistory(RhistorySEXP);
     Rcpp::traits::input_parameter< const std::string& >::type cached_file(cached_fileSEXP);
-    __result = Rcpp::wrap(init_phi(Rmodel, Rhistory, cached_file));
+    Rcpp::traits::input_parameter< int >::type cache_size(cache_sizeSEXP);
+    __result = Rcpp::wrap(init_phi(Rmodel, Rhistory, cached_file, cache_size));
     return __result;
 END_RCPP
 }

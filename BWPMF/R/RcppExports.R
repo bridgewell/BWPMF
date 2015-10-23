@@ -117,8 +117,12 @@ dump_phi <- function(Rphi) {
     .Call('BWPMF_dump_phi', PACKAGE = 'BWPMF', Rphi)
 }
 
-init_phi <- function(Rmodel, Rhistory, cached_file = "") {
-    .Call('BWPMF_init_phi', PACKAGE = 'BWPMF', Rmodel, Rhistory, cached_file)
+test_phi_on_disk <- function(path, value) {
+    .Call('BWPMF_test_phi_on_disk', PACKAGE = 'BWPMF', path, value)
+}
+
+init_phi <- function(Rmodel, Rhistory, cached_file = "", cache_size = 10000L) {
+    .Call('BWPMF_init_phi', PACKAGE = 'BWPMF', Rmodel, Rhistory, cached_file, cache_size)
 }
 
 train_once <- function(Rmodel, Rhistory, Rphi, logger) {

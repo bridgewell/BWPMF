@@ -77,6 +77,7 @@ class PhiOnDisk {
     case Mode::write: {
 #ifdef NOISY_DDEBUG
       Rcpp::Rcout << __FILE__ << "(" << __LINE__ << ")" << std::endl;
+      Rcpp::Rcout << "writing " << current_position << " elements to disk..." << std::endl;
 #endif
       for(size_t i = 0;i < current_position;i++) {
         Phi& phi(buffer[i]);
@@ -179,15 +180,15 @@ public:
   }
   
   Phi& get_write_target() {
-    Phi& retval(buffer[current_position++]);
     check();
+    Phi& retval(buffer[current_position++]);
     return retval;
   }
   
 
   const Phi& get_read_target() {
-    const Phi& retval(buffer[current_position++]);
     check();
+    const Phi& retval(buffer[current_position++]);
     return retval;
   }
   

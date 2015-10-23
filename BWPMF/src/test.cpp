@@ -176,3 +176,58 @@ NumericMatrix dump_phi(SEXP Rphi) {
     throw std::invalid_argument("Unknown storage type");
   }
 }
+
+//[[Rcpp::export]]
+SEXP test_phi_on_disk(const std::string& path, NumericMatrix value) {
+  Param::set_K(value.ncol());
+  PhiOnDisk phi_disk(path, 10);
+  // write
+  {
+    auto write_flag(phi_disk.get_write_flag());
+    for(size_t i = 0;i < value.nrow();i++) {
+      Phi& phi(phi_disk.get_write_target());
+      for(int k = 0;k < value.ncol();k++) {
+        phi.data[k] = (float) value(i,k);
+      }
+    }
+  }
+  if (value.nrow() != phi_disk.get_total_size()) {
+    Rcout << "value.nrow(): " << value.nrow() << " phi_disk.get_total_size(): " << phi_disk.get_total_size() << std::endl;
+    throw std::logic_error("total size is incorrect");
+  }
+  NumericMatrix retval1(value.nrow(), value.ncol());
+  // read
+  {
+    auto read_flag(phi_disk.get_read_flag());
+    for(size_t i = 0;i < value.nrow();i++) {
+      const Phi& phi(phi_disk.get_read_target());
+      for(int k = 0;k < value.ncol();k++) {
+        retval1(i, k) = phi.data[k];
+      }
+    }
+  }
+  // write again
+  {
+    auto write_flag(phi_disk.get_write_flag());
+    for(size_t i = 0;i < value.nrow();i++) {
+      Phi& phi(phi_disk.get_write_target());
+      for(int k = 0;k < value.ncol();k++) {
+        phi.data[k] = (float) value(i,k) + 1;
+      }
+    }
+  }
+  if (value.nrow() != phi_disk.get_total_size()) throw std::logic_error("total size is incorrect");
+  NumericMatrix retval2(value.nrow(), value.ncol());
+  // read again
+  // read
+  {
+    auto read_flag(phi_disk.get_read_flag());
+    for(size_t i = 0;i < value.nrow();i++) {
+      const Phi& phi(phi_disk.get_read_target());
+      for(int k = 0;k < value.ncol();k++) {
+        retval2(i, k) = phi.data[k];
+      }
+    }
+  }
+  return List::create(Named("retval1") = retval1, Named("retval2") = retval2);
+}

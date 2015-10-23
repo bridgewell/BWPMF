@@ -5,7 +5,7 @@ using namespace Rcpp;
 RCPP_EXPOSED_CLASS(Model)
 
 //[[Rcpp::export]]
-SEXP init_phi(SEXP Rmodel, SEXP Rhistory, const std::string& cached_file = "") {
+SEXP init_phi(SEXP Rmodel, SEXP Rhistory, const std::string& cached_file = "", int cache_size = 10000) {
   Model* pmodel(as<Model*>(Rmodel));
   Model& model(*pmodel);
   if (cached_file.compare("") == 0) {
@@ -15,7 +15,7 @@ SEXP init_phi(SEXP Rmodel, SEXP Rhistory, const std::string& cached_file = "") {
     retval.attr("storage") = "memory";
     return retval;
   } else {
-    XPtr<PhiOnDisk> retval(new PhiOnDisk(cached_file, 10000));
+    XPtr<PhiOnDisk> retval(new PhiOnDisk(cached_file, cache_size));
     retval.attr("storage") = "disk";
     return retval;
   }
@@ -305,11 +305,6 @@ void train_once_disk(SEXP Rmodel, SEXP Rhistory, SEXP Rphi, Function logger) {
 //         auto pphi_range = phi_list.range(user);
 //         const ItemCount *item_count = history.data(user);
         auto item_range = history.data.range(user);
-#ifdef NOISY_DEBUG
-        if (history.data.size(user) != phi_list.size(user)) throw std::logic_error(
-          boost::str(boost::format("Inconsistent history size(%1%) and phi size(%2%)") % history.data.size(user) % phi_list.size(user))
-          );
-#endif
         for(const ItemCount *pitem_count = item_range.first; pitem_count != item_range.second;pitem_count++) {
           size_t item = pitem_count->item;
 #ifdef NOISY_DDEBUG
@@ -325,29 +320,29 @@ void train_once_disk(SEXP Rmodel, SEXP Rhistory, SEXP Rphi, Function logger) {
           for(int k = 0;k < K;k++) {
             phi.data[k] = exp(Rf_digamma(user_param.shp1[k]) - log(user_param.rte1[k]) + Rf_digamma(item_param.shp1[k]) - log(item_param.rte1[k]));
           }
-#ifdef NOISY_DEBUG
-          if ((user == 0 | user == 1) & (pphi == pphi_range.first | pphi == pphi_range.first + 1)) {
-            for(int k = 0;k < K;k++) {
-              Rprintf("user_param.shp1[%d]: %f user_param.rte1[%d]: %f item_param.shp1[%d]: %f item_param.rte1[%d]: %f ",
-                    k, user_param.shp1[k], k, user_param.rte1[k], k, item_param.shp1[k], k, item_param.rte1[k]);
-              Rprintf("==> phi.data[%d]: %f\n", k, phi.data[k]);
-            }
-          }
-#endif
+// #ifdef NOISY_DEBUG
+//           if ((user == 0 | user == 1) & (pphi == pphi_range.first | pphi == pphi_range.first + 1)) {
+//             for(int k = 0;k < K;k++) {
+//               Rprintf("user_param.shp1[%d]: %f user_param.rte1[%d]: %f item_param.shp1[%d]: %f item_param.rte1[%d]: %f ",
+//                     k, user_param.shp1[k], k, user_param.rte1[k], k, item_param.shp1[k], k, item_param.rte1[k]);
+//               Rprintf("==> phi.data[%d]: %f\n", k, phi.data[k]);
+//             }
+//           }
+// #endif
           double denom = std::accumulate(phi.data, phi.data + K, 0.0);
           std::transform(phi.data, phi.data + K, phi.data, [&denom](const double input) {
             return input / denom;
           });
-#ifdef NOISY_DEBUG
-          if ((user == 0 | user == 1) & (pitem_count == item_range.first | pitem_count == item_range.first.first + 1)) {
-            Rprintf("After reweighted, the sum of phi becomes: %f\n", std::accumulate(phi.data, phi.data + K, 0.0));
-            Rprintf("phi: ");
-            for(int k = 0;k < K;k++) {
-              Rprintf("phi.data[%d]: %f ", k, phi.data[k]);
-            }
-            Rprintf("\n");
-          }
-#endif
+// #ifdef NOISY_DEBUG
+//           if ((user == 0 | user == 1) & (pitem_count == item_range.first | pitem_count == item_range.first.first + 1)) {
+//             Rprintf("After reweighted, the sum of phi becomes: %f\n", std::accumulate(phi.data, phi.data + K, 0.0));
+//             Rprintf("phi: ");
+//             for(int k = 0;k < K;k++) {
+//               Rprintf("phi.data[%d]: %f ", k, phi.data[k]);
+//             }
+//             Rprintf("\n");
+//           }
+// #endif
         }
       }
       
