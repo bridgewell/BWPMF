@@ -125,6 +125,10 @@ struct Model {
   
   Model(const Prior& _prior, int _k, size_t user_size, size_t item_size);
   
+  Model(const Model& m);
+  
+  void operator=(const Model& m);
+  
   ~Model();
 
 };

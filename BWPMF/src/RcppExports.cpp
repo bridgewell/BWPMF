@@ -301,15 +301,27 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// dump_phi
+NumericMatrix dump_phi(SEXP Rphi);
+RcppExport SEXP BWPMF_dump_phi(SEXP RphiSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type Rphi(RphiSEXP);
+    __result = Rcpp::wrap(dump_phi(Rphi));
+    return __result;
+END_RCPP
+}
 // init_phi
-SEXP init_phi(SEXP Rmodel, SEXP Rhistory);
-RcppExport SEXP BWPMF_init_phi(SEXP RmodelSEXP, SEXP RhistorySEXP) {
+SEXP init_phi(SEXP Rmodel, SEXP Rhistory, const std::string& cached_file);
+RcppExport SEXP BWPMF_init_phi(SEXP RmodelSEXP, SEXP RhistorySEXP, SEXP cached_fileSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< SEXP >::type Rmodel(RmodelSEXP);
     Rcpp::traits::input_parameter< SEXP >::type Rhistory(RhistorySEXP);
-    __result = Rcpp::wrap(init_phi(Rmodel, Rhistory));
+    Rcpp::traits::input_parameter< const std::string& >::type cached_file(cached_fileSEXP);
+    __result = Rcpp::wrap(init_phi(Rmodel, Rhistory, cached_file));
     return __result;
 END_RCPP
 }

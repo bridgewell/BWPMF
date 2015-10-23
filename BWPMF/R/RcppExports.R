@@ -113,8 +113,12 @@ print_history_index <- function(Rhistory) {
     invisible(.Call('BWPMF_print_history_index', PACKAGE = 'BWPMF', Rhistory))
 }
 
-init_phi <- function(Rmodel, Rhistory) {
-    .Call('BWPMF_init_phi', PACKAGE = 'BWPMF', Rmodel, Rhistory)
+dump_phi <- function(Rphi) {
+    .Call('BWPMF_dump_phi', PACKAGE = 'BWPMF', Rphi)
+}
+
+init_phi <- function(Rmodel, Rhistory, cached_file = "") {
+    .Call('BWPMF_init_phi', PACKAGE = 'BWPMF', Rmodel, Rhistory, cached_file)
 }
 
 train_once <- function(Rmodel, Rhistory, Rphi, logger) {

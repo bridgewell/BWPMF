@@ -89,6 +89,11 @@ void test_list_of_list() {
 
 //[[Rcpp::export]]
 void test_phi(SEXP Rphi, SEXP Rhistory) {
+  {
+    RObject phi(Rphi);
+    const std::string storage(as<std::string>(phi.attr("storage")));
+    if (storage.compare("memory") != 0) return;
+  }
   PhiList &phi_list(*XPtr<PhiList>(Rphi));
   History &history(*XPtr<History>(Rhistory));
   if (phi_list.get_index_size() != history.data.get_index_size()) throw std::logic_error(
@@ -111,6 +116,10 @@ void print_list_of_list_index(const ListOfList<T>& src) {
 
 //[[Rcpp::export]]
 void print_phi_index(SEXP Rphi) {
+  {
+    RObject phi(Rphi);
+    if (as<std::string>(phi.attr("storage")).compare("memory") != 0) return;
+  }
   PhiList &phi_list(*XPtr<PhiList>(Rphi));
   return print_list_of_list_index(phi_list);
 }
@@ -119,4 +128,51 @@ void print_phi_index(SEXP Rphi) {
 void print_history_index(SEXP Rhistory) {
   History &history(*XPtr<History>(Rhistory));
   return print_list_of_list_index(history.data);
+}
+
+NumericMatrix dump_phi_memory(SEXP Rphi) {
+  XPtr<PhiList> pphi_list(Rphi);
+  const PhiList& phi_list(*pphi_list);
+  size_t total_size = phi_list.get_total_size();
+  NumericMatrix retval(total_size, Param::K);
+  size_t j = 0;
+  for(size_t user = 0;user < phi_list.get_index_size();user++) {
+    const auto& user_range(phi_list.range(user));
+    for(auto p = user_range.first;p != user_range.second;p++) {
+      const Phi& phi(*p);
+      for(int k = 0;k < Param::K;k++) {
+        retval(j, k) = phi.data[k];
+      }
+      j++;
+    }
+  }
+  return retval;
+}
+
+NumericMatrix dump_phi_disk(SEXP Rphi) {
+  XPtr<PhiOnDisk> pphi_disk(Rphi);
+  PhiOnDisk& phi_disk(*pphi_disk);
+  size_t total_size = phi_disk.get_total_size();
+  NumericMatrix retval(total_size, Param::K);
+  auto read_flag(phi_disk.get_read_flag());
+  for(size_t i = 0;i < total_size;i++) {
+    const Phi& phi(phi_disk.get_read_target());
+    for(int k = 0;k < Param::K;k++) {
+      retval(i, k) = phi.data[k];
+    }
+  }
+  return retval;
+}
+
+//[[Rcpp::export]]
+NumericMatrix dump_phi(SEXP Rphi) {
+  RObject phi(Rphi);
+  const std::string storage(as<std::string>(phi.attr("storage")));
+  if (storage.compare("memory") == 0) {
+    return dump_phi_memory(Rphi);
+  } else if (storage.compare("disk") == 0) {
+    return dump_phi_disk(Rphi);
+  } else {
+    throw std::invalid_argument("Unknown storage type");
+  }
 }

@@ -81,7 +81,21 @@ public:
     return data + index[i];
   }
   
+  const T* operator()(size_t i) const {
+#ifdef CHECK_BOUNDARY
+    if (i >= index_size) throw std::invalid_argument("i exceeds the index_size");
+#endif
+    return data + index[i];
+  }
+  
   std::pair<T*,T*> range(size_t i) {
+#ifdef CHECK_BOUNDARY
+    if (i >= index_size) throw std::invalid_argument("i exceeds the index_size");
+#endif
+    return std::make_pair(data + index[i], data + index[i+1]);
+  }
+  
+  std::pair<const T*, const T*> range(size_t i) const {
 #ifdef CHECK_BOUNDARY
     if (i >= index_size) throw std::invalid_argument("i exceeds the index_size");
 #endif

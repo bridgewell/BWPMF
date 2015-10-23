@@ -8,6 +8,27 @@ Model::Model()
   : K(0), prior(), user_size(0), item_size(0), user_param(NULL), item_param(NULL)
   { }
 
+Model::Model(const Model& m) 
+  : K(m.K), prior(m.prior), user_size(m.user_size), item_size(m.item_size),
+    user_param(new Param[m.user_size]), item_param(new Param[m.item_size])
+  {
+    std::copy(m.user_param, m.user_param + m.user_size, user_param);
+    std::copy(m.item_param, m.item_param + m.item_size, item_param);
+  }
+
+void Model::operator=(const Model& m) {
+  delete [] user_param;
+  delete [] item_param;
+  K = m.K;
+  prior = m.prior;
+  user_size = m.user_size;
+  item_size = m.item_size;
+  user_param = new Param[user_size];
+  item_param = new Param[item_size];
+  std::copy(m.user_param, m.user_param + m.user_size, user_param);
+  std::copy(m.item_param, m.item_param + m.item_size, item_param);
+}
+
 Model::Model(const Prior& _prior, int _k, size_t _user_size, size_t _item_size)
   : K(_k), prior(_prior), user_size(_user_size), item_size(_item_size),
     user_param(new Param[user_size]), item_param(new Param[item_size])
@@ -232,6 +253,7 @@ RCPP_MODULE(model) {
   
   class_<Model>("Model")
     .constructor<Prior,int,size_t,size_t>()
+    .constructor<Model>()
     .field_readonly("K", &Model::K)
     .field("prior", &Model::prior)
     .method("user_size", &user_size)
