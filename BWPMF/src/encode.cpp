@@ -4,18 +4,6 @@ using namespace Rcpp;
 
 Dictionary cookie_dict, hostname_dict;
 
-template <typename T>
-SEXP serialize(SEXP Rpath, const T& target) {
-  const std::string path(as<std::string>(Rpath));
-  std::ofstream os(path.c_str());
-  boost::iostreams::filtering_stream<boost::iostreams::output> f;
-  f.push(boost::iostreams::gzip_compressor());
-  f.push(os);
-  boost::archive::binary_oarchive oa(f);
-  oa << target;
-  return R_NilValue;
-}
-
 //[[Rcpp::export]]
 SEXP serialize_cookie(SEXP Rpath = R_NilValue) {
   if (Rpath == R_NilValue) {
@@ -28,16 +16,6 @@ SEXP serialize_cookie(SEXP Rpath = R_NilValue) {
 //[[Rcpp::export]]
 void deserialize_cookie_raw(RawVector src) {
   rcpp_deserialize(cookie_dict, src, true, true);
-}
-
-template<typename T>
-void deserialize(const std::string& path, T& target) {
-  std::ifstream is(path.c_str());
-  boost::iostreams::filtering_stream<boost::iostreams::input> f;
-  f.push(boost::iostreams::gzip_decompressor());
-  f.push(is);
-  boost::archive::binary_iarchive ia(f);
-  ia >> target;
 }
 
 //[[Rcpp::export]]

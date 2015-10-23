@@ -34,6 +34,28 @@ std::string serialize(const T& m, bool is_binary, bool is_gzip) {
 }
 
 template<typename T>
+void deserialize(const std::string& path, T& target) {
+  std::ifstream is(path.c_str());
+  boost::iostreams::filtering_stream<boost::iostreams::input> f;
+  f.push(boost::iostreams::gzip_decompressor());
+  f.push(is);
+  boost::archive::binary_iarchive ia(f);
+  ia >> target;
+}
+
+template <typename T>
+SEXP serialize(SEXP Rpath, const T& target) {
+  const std::string path(Rcpp::as<std::string>(Rpath));
+  std::ofstream os(path.c_str());
+  boost::iostreams::filtering_stream<boost::iostreams::output> f;
+  f.push(boost::iostreams::gzip_compressor());
+  f.push(os);
+  boost::archive::binary_oarchive oa(f);
+  oa << target;
+  return R_NilValue;
+}
+
+template<typename T>
 SEXP rcpp_serialize(const T& m, bool is_binary, bool is_gzip) {
   const std::string src(serialize<T>(m, is_binary, is_gzip));
   Rcpp::RawVector retval(src.size());

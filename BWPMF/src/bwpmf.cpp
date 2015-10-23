@@ -206,28 +206,46 @@ void set_K(int K) {
   Param::set_K(K);
 }
 
-NumericMatrix model_export_user(Model* pmodel) {
-  NumericMatrix retval(pmodel->user_size, pmodel->K);
+NumericMatrix model_export(Param* pparam, size_t param_size, int K) {
+  NumericMatrix retval(param_size, K);
 #pragma omp parallel for
-  for(size_t user = 0;user < pmodel->user_size;user++) {
-    Param& user_param(pmodel->user_param[user]);
-    for(int k = 0;k < pmodel->K;k++) {
-      retval(user, k) = user_param.shp1[k] / user_param.rte1[k];
+  for(size_t i = 0;i < param_size;i++) {
+    Param& param(pparam[i]);
+    for(int k = 0;k < K;k++) {
+      retval(i, k) = param.shp1[k] / param.rte1[k];
     }
   }
   return retval;
 }
 
+NumericMatrix model_export_user(Model* pmodel) {
+  return model_export(pmodel->user_param, pmodel->user_size, pmodel->K);
+}
+
 NumericMatrix model_export_item(Model* pmodel) {
-  NumericMatrix retval(pmodel->item_size, pmodel->K);
-#pragma omp parallel for
-  for(size_t item = 0;item < pmodel->item_size;item++) {
-    Param& item_param(pmodel->item_param[item]);
-    for(int k = 0;k < pmodel->K;k++) {
-      retval(item, k) = item_param.shp1[k] / item_param.rte1[k];
-    }
+  return model_export(pmodel->item_param, pmodel->item_size, pmodel->K);
+}
+
+NumericMatrix model_export_with_name(Param* pparam, size_t param_size, int K, const std::string& encoder_path) {
+  NumericMatrix retval(model_export(pparam, param_size, K));
+  Dictionary encoder;
+  deserialize(encoder_path, encoder);
+  List dimnames(2);
+  CharacterVector names(param_size);
+  for(const auto& metadata : encoder) {
+    names[metadata.second] = Rf_mkCharLen(metadata.first.c_str(), metadata.first.size());
   }
+  dimnames[0] = names;
+  retval.attr("dimnames") = dimnames;
   return retval;
+}
+
+SEXP model_export_user_with_name(Model* pmodel, const std::string& user_encoder_path) {
+  return model_export_with_name(pmodel->user_param, pmodel->user_size, pmodel->K, user_encoder_path);
+}
+
+SEXP model_export_item_with_name(Model* pmodel, const std::string& item_encoder_path) {
+  return model_export_with_name(pmodel->item_param, pmodel->item_size, pmodel->K, item_encoder_path);
 }
 
 RCPP_MODULE(model) {
@@ -264,6 +282,8 @@ RCPP_MODULE(model) {
     .method("deserialize", &model_deserialize)
     .method("export_user", &model_export_user)
     .method("export_item", &model_export_item)
+    .method("export_user_with_name", &model_export_user_with_name)
+    .method("export_item_with_name", &model_export_item_with_name)
   ;
 
 }
