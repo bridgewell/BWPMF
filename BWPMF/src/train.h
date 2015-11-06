@@ -3,6 +3,9 @@
 
 #include <memory>
 #include <boost/serialization/split_member.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <Rcpp.h>
@@ -47,9 +50,13 @@ class PhiOnDisk {
   
   std::shared_ptr<std::ifstream> ifs;
   
+  std::shared_ptr<boost::iostreams::filtering_stream<boost::iostreams::input> > bif;
+  
   std::shared_ptr<boost::archive::binary_iarchive> iar;
   
   std::shared_ptr<std::ofstream> ofs;
+  
+  std::shared_ptr<boost::iostreams::filtering_stream<boost::iostreams::output> > bof;
   
   std::shared_ptr<boost::archive::binary_oarchive> oar;
   
@@ -108,23 +115,30 @@ class PhiOnDisk {
     current_position = 0;
     total_size = 0;
     ofs.reset(new std::ofstream(path.c_str()));
-    oar.reset(new boost::archive::binary_oarchive(*ofs));
+    bof.reset(new boost::iostreams::filtering_stream<boost::iostreams::output>());
+    bof->push(boost::iostreams::gzip_compressor());
+    bof->push(*ofs); 
+    oar.reset(new boost::archive::binary_oarchive(*bof));
     reset();
   }
 
   void end_write() {
     flush();
     reset();
-    oar.reset();
     ofs->flush();
     ofs->close();
+    oar.reset();
+    bof.reset();
     ofs.reset();
   }
 
   void start_read() {
     mode = Mode::read;
     ifs.reset(new std::ifstream(path.c_str()));
-    iar.reset(new boost::archive::binary_iarchive(*ifs));
+    bif.reset(new boost::iostreams::filtering_stream<boost::iostreams::input>());
+    bif->push(boost::iostreams::gzip_decompressor());
+    bif->push(*ifs);
+    iar.reset(new boost::archive::binary_iarchive(*bif));
     read_size = 0;
     flush();
     reset();
@@ -132,8 +146,9 @@ class PhiOnDisk {
   
   void end_read() {
     reset();
-    iar.reset();
     ifs->close();
+    iar.reset();
+    bif.reset();
     ifs.reset();
   }
 
