@@ -4,8 +4,6 @@ using namespace Rcpp;
 
 RCPP_EXPOSED_CLASS(Model)
 
-typedef std::vector<std::shared_ptr<PhiOnDisk> > pPhiOnDiskVec;
-  
 //[[Rcpp::export]]
 SEXP init_phi(SEXP Rmodel, SEXP Rhistory, const std::string& cached_file = "", int cache_size = 10000) {
   Model* pmodel(as<Model*>(Rmodel));
@@ -499,6 +497,7 @@ void train_once_disk(SEXP Rmodel, SEXP Rhistory, SEXP Rphi, Function logger) {
           const int y = pitem_count->count;
           for(int k = 0;k < K;k++) {
             double tmp = y * phi.data[k];
+#pragma omp atomic
             item_param.shp1[k] += tmp;
           }
         }

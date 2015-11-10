@@ -25,6 +25,6 @@ stopifnot(!isTRUE(all.equal(m1$export_user(), m2$export_user())))
 
 train_once(m2, training_history, phi2, function(msg) {})
 stopifnot(max(abs(m1$export_user() - m2$export_user())) < 1e-5)
-stopifnot(isTRUE(all.equal(dim(dump_phi(phi1)), dim(dump_phi(phi2)))))
-stopifnot(max(abs(dump_phi(phi1) - dump_phi(phi2))) < 1e-5)
+stopifnot(isTRUE(all.equal(dim(dphi1 <- dump_phi(phi1)), dim(dphi2 <- dump_phi(phi2, training_history, 10)))))
+stopifnot(max(abs(dphi1 - dphi2)) < 1e-5)
 stopifnot(max(abs(m1$export_item() - m2$export_item())) < 1e-5)

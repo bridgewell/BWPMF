@@ -302,13 +302,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // dump_phi
-NumericMatrix dump_phi(SEXP Rphi);
-RcppExport SEXP BWPMF_dump_phi(SEXP RphiSEXP) {
+NumericMatrix dump_phi(SEXP Rphi, SEXP Rhistory, SEXP K);
+RcppExport SEXP BWPMF_dump_phi(SEXP RphiSEXP, SEXP RhistorySEXP, SEXP KSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< SEXP >::type Rphi(RphiSEXP);
-    __result = Rcpp::wrap(dump_phi(Rphi));
+    Rcpp::traits::input_parameter< SEXP >::type Rhistory(RhistorySEXP);
+    Rcpp::traits::input_parameter< SEXP >::type K(KSEXP);
+    __result = Rcpp::wrap(dump_phi(Rphi, Rhistory, K));
     return __result;
 END_RCPP
 }

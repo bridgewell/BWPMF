@@ -113,8 +113,8 @@ print_history_index <- function(Rhistory) {
     invisible(.Call('BWPMF_print_history_index', PACKAGE = 'BWPMF', Rhistory))
 }
 
-dump_phi <- function(Rphi) {
-    .Call('BWPMF_dump_phi', PACKAGE = 'BWPMF', Rphi)
+dump_phi <- function(Rphi, Rhistory = NULL, K = NULL) {
+    .Call('BWPMF_dump_phi', PACKAGE = 'BWPMF', Rphi, Rhistory, K)
 }
 
 test_phi_on_disk <- function(path, value) {

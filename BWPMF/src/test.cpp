@@ -149,29 +149,69 @@ NumericMatrix dump_phi_memory(SEXP Rphi) {
   return retval;
 }
 
-NumericMatrix dump_phi_disk(SEXP Rphi) {
-  XPtr<PhiOnDisk> pphi_disk(Rphi);
-  PhiOnDisk& phi_disk(*pphi_disk);
-  size_t total_size = phi_disk.get_total_size();
-  NumericMatrix retval(total_size, Param::K);
-  auto read_flag(phi_disk.get_read_flag());
-  for(size_t i = 0;i < total_size;i++) {
-    const Phi& phi(phi_disk.get_read_target());
-    for(int k = 0;k < Param::K;k++) {
-      retval(i, k) = phi.data[k];
+NumericMatrix dump_phi_disk(SEXP Rphi, SEXP Rhistory, int K) {
+  XPtr<History> phistory(Rhistory);
+  History &history(*phistory);
+  XPtr<pPhiOnDiskVec> pphi_disk_vec(Rphi);
+  pPhiOnDiskVec& phi_disk_vec(*pphi_disk_vec);
+  size_t total_size = history.data.get_total_size();
+  std::vector< std::vector< std::vector<double> > > retval_buffer;
+  retval_buffer.resize(history.user_size);
+  bool is_valid = true;
+#pragma omp parallel
+  {
+#pragma omp master 
+    {
+      Rprintf("Checking threads...\n");
+      if (as<int>(pphi_disk_vec.attr("threads")) != omp_get_num_threads()) {
+        is_valid = false;
+      }
+    }
+  }
+  if (!is_valid) throw std::runtime_error("The threads of phi and openmp are inconsistent!");
+#pragma omp parallel
+  {
+    size_t thread_id = omp_get_thread_num();
+    PhiOnDisk& phi_disk(*pphi_disk_vec->operator[](thread_id).get());
+    {
+      auto read_flag(phi_disk.get_read_flag());
+#pragma omp for
+      for(size_t user = 0;user < history.user_size;user++) {
+        auto& retval_element(retval_buffer[user]);
+        auto item_range = history.data.range(user);
+        for(const ItemCount *pitem_count = item_range.first; pitem_count != item_range.second;pitem_count++) {
+          // size_t item = pitem_count->item;
+          std::vector<double> element(K, 0);
+          const Phi& phi(phi_disk.get_read_target());
+          for(int k = 0;k < K;k++) {
+            element[k] = phi.data[k];
+          }
+          retval_element.push_back(element);
+        }
+      }
+    }
+  }
+  NumericMatrix retval(total_size, K);
+  size_t i = 0;
+  for(const auto& retval_element : retval_buffer) {
+    for(const auto& element : retval_element) {
+      for(int k = 0;k < K;k++) {
+        retval(i, k) = element[k];
+      }
+      i++;
     }
   }
   return retval;
 }
 
 //[[Rcpp::export]]
-NumericMatrix dump_phi(SEXP Rphi) {
+NumericMatrix dump_phi(SEXP Rphi, SEXP Rhistory = R_NilValue, SEXP K = R_NilValue) {
   RObject phi(Rphi);
   const std::string storage(as<std::string>(phi.attr("storage")));
   if (storage.compare("memory") == 0) {
     return dump_phi_memory(Rphi);
   } else if (storage.compare("disk") == 0) {
-    return dump_phi_disk(Rphi);
+    return dump_phi_disk(Rphi, Rhistory, as<int>(K));
   } else {
     throw std::invalid_argument("Unknown storage type");
   }
